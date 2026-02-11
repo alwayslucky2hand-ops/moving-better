@@ -26,10 +26,66 @@
             justify-content: center; 
             height: 100vh;
             color: var(--brand-text);
+            overflow: hidden; /* 防止雙重捲軸 */
         }
         
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* =========================================
+           PART 1: 啟動頁 (Launcher) 樣式
+           ========================================= */
+        #launcher-view {
+            display: none; /* 預設隱藏，由 JS 控制 */
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #FFFDF5 0%, #FDF6E3 100%);
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 2rem;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        .launcher-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            padding: 2rem;
+            border-radius: 2rem;
+            box-shadow: 0 10px 30px rgba(95, 160, 157, 0.15);
+            max-width: 320px;
+            width: 100%;
+            transform: translateY(0);
+            transition: transform 0.3s ease;
+        }
+        
+        .launcher-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .pulse-btn {
+            background: var(--brand-teal);
+            color: white;
+            animation: pulse-shadow 2s infinite;
+        }
+        
+        @keyframes pulse-shadow {
+            0% { box-shadow: 0 0 0 0 rgba(95, 160, 157, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(95, 160, 157, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(95, 160, 157, 0); }
+        }
+
+        /* =========================================
+           PART 2: 聊天室 (Chat App) 樣式
+           ========================================= */
+        #app-view {
+            display: none; /* 預設隱藏 */
+            width: 100%;
+            height: 100%;
+        }
 
         /* 對話框基礎樣式 */
         .bubble { 
@@ -118,7 +174,29 @@
 </head>
 <body class="w-full h-full sm:py-4">
 
-    <main id="app-container" class="w-full max-w-[480px] h-[100dvh] sm:h-[95vh] bg-[#FFFDF5] sm:rounded-[2rem] sm:shadow-2xl overflow-hidden flex flex-col relative mx-auto border-0 sm:border border-gray-200">
+    <div id="launcher-view">
+        <div class="launcher-card flex flex-col items-center">
+            <div class="w-24 h-24 mb-4 rounded-full overflow-hidden border-4 border-white shadow-md bg-white">
+                <img src="https://i.meee.com.tw/5ZnmWeT.png" alt="搬家小岳" class="w-full h-full object-cover">
+            </div>
+            <h1 class="text-xl font-bold text-[#2B201A] tracking-wide mb-1">搬家小岳</h1>
+            <p class="text-[#5FA09D] text-sm font-medium mb-6">照片估價 × 語音諮詢</p>
+            
+            <p class="text-gray-500 text-xs mb-4 leading-relaxed">
+                為了提供完整的語音辨識功能<br>請點擊下方按鈕開啟諮詢室
+            </p>
+
+            <button onclick="openFullChat()" class="pulse-btn w-full py-3.5 rounded-xl font-bold shadow-lg hover:bg-[#4A8B89] transform active:scale-95 transition flex items-center justify-center gap-2">
+                <span>啟動語音互動</span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                </svg>
+            </button>
+        </div>
+        <div class="absolute bottom-4 text-[10px] text-[#2B201A]/30 font-medium">Powered by 搬家阿岳</div>
+    </div>
+
+    <main id="app-view" class="w-full max-w-[480px] h-[100dvh] sm:h-[95vh] bg-[#FFFDF5] sm:rounded-[2rem] sm:shadow-2xl overflow-hidden flex flex-col relative mx-auto border-0 sm:border border-gray-200">
 
         <div id="login-screen" class="absolute inset-0 z-50 bg-[#F4D35E] flex flex-col justify-center items-center p-8 transition-transform duration-500 transform translate-y-0">
             <div class="w-full max-w-xs bg-white/90 backdrop-blur p-6 rounded-3xl shadow-xl">
@@ -217,10 +295,49 @@
 
     <script>
         // ============================================
-        // ★★★ 請在此填入您的 GAS Web App 網址 ★★★
+        // ★★★ 請填入您的 GAS 部署網址 (結尾為 /exec) ★★★
         // ============================================
         const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwLPhSS5PNpur1COFFR5i_bKRUWWIjCFKtsF2dAG1RlyOE0vOLPdfcHuO6hYNxWHgAv/exec'; 
 
+        // ============================================
+        // 1. 核心邏輯：自動判斷是否嵌入中 (Launcher 切換)
+        // ============================================
+        function checkEmbedStatus() {
+            const launcherView = document.getElementById('launcher-view');
+            const appView = document.getElementById('app-view');
+            
+            // 判斷方式：如果當前視窗不是最頂層視窗 (代表被 iframe 嵌入)
+            // 注意：部分瀏覽器可能阻擋 window.top 存取，所以加 try-catch
+            let isEmbedded = false;
+            try {
+                isEmbedded = window.self !== window.top;
+            } catch (e) {
+                isEmbedded = true;
+            }
+
+            if (isEmbedded) {
+                // 在 Google Site 裡 -> 顯示啟動頁
+                launcherView.style.display = 'flex';
+                appView.style.display = 'none';
+            } else {
+                // 獨立視窗 -> 顯示 App
+                launcherView.style.display = 'none';
+                appView.style.display = 'flex';
+            }
+        }
+
+        // 按鈕點擊：開啟新視窗
+        function openFullChat() {
+            window.open(window.location.href, '_blank');
+        }
+
+        // 初始化檢查
+        window.addEventListener('load', checkEmbedStatus);
+
+
+        // ============================================
+        // 2. 以下為聊天室原本的邏輯
+        // ============================================
         const loginScreen = document.getElementById('login-screen');
         const loginForm = document.getElementById('login-form');
         const chatForm = document.getElementById('chat-form');
@@ -337,7 +454,7 @@
                     messageInput.placeholder = "錄音中... (再次點擊麥克風停止)";
                 } catch (err) {
                     console.error("Mic Error:", err);
-                    alert("無法存取麥克風。請確認您已允許瀏覽器使用麥克風權限。\n(若是透過 Google Sites 瀏覽，請嘗試使用「在新分頁開啟」功能)");
+                    alert("無法存取麥克風。請確認您已允許瀏覽器使用麥克風權限。\n(若是透過 Google Sites 瀏覽，請點擊「啟動語音互動」開啟新視窗)");
                 }
             } else {
                 mediaRecorder.stop();
@@ -417,15 +534,13 @@
             }
         });
 
-        // ★★★ 關鍵修正：使用 fetch 呼叫遠端 API (替代 google.script.run) ★★★
         function handleBackendCall(text, images, audioData) {
             const loadingId = appendLoading();
             scrollToBottom();
             
-            // 檢查是否設定了 API URL
             if (!GAS_API_URL || GAS_API_URL.includes('您的ID')) {
                 removeLoading(loadingId);
-                appendMessage(`<div class="bubble bubble-ai text-red-500">⚠️ 請先在程式碼中設定 GAS_API_URL (GAS 部署網址)</div>`, 'ai');
+                appendMessage(`<div class="bubble bubble-ai text-red-500">⚠️ 請先在程式碼中設定 GAS_API_URL</div>`, 'ai');
                 return;
             }
 
@@ -437,13 +552,9 @@
                 email: userData.email
             };
 
-            // 使用標準 fetch 發送 POST 請求
             fetch(GAS_API_URL, {
                 method: 'POST',
-                // 使用 text/plain 可以避免部分瀏覽器對 GAS 發出 OPTIONS 預檢請求導致的 CORS 錯誤
-                headers: {
-                    'Content-Type': 'text/plain;charset=utf-8', 
-                },
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify(payload)
             })
             .then(response => response.json())
@@ -459,7 +570,7 @@
             })
             .catch(error => {
                 removeLoading(loadingId);
-                appendMessage(`<div class="bubble bubble-ai text-red-500">連線發生錯誤，請稍後再試。<br><small>${error.message}</small></div>`, 'ai');
+                appendMessage(`<div class="bubble bubble-ai text-red-500">連線發生錯誤<br><small>${error.message}</small></div>`, 'ai');
                 console.error("API Error:", error);
             });
         }
