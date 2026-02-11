@@ -24,19 +24,24 @@
             padding: 0; 
             display: flex; 
             justify-content: center; 
-            height: 100vh;
+            /* 修正 1: 移除高度限制，改用 min-height，並允許捲動 */
+            min-height: 100vh;
             color: var(--brand-text);
-            overflow: hidden;
+            /* 修正 2: 移除 overflow: hidden，讓頁面可以自然捲動 */
+            overflow-y: auto; 
         }
         
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
         /* =========================================
-           PART 1: 啟動頁 (Launcher) - 強制置中設計
+           PART 1: 啟動頁 (Launcher)
            ========================================= */
         #launcher-view {
-            display: none; /* 預設隱藏，由 JS 控制 */
+            display: none; 
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100vw;
             height: 100vh;
             background: linear-gradient(135deg, #FFFDF5 0%, #FDF6E3 100%);
@@ -45,9 +50,6 @@
             justify-content: center;
             text-align: center;
             padding: 1rem;
-            position: absolute;
-            top: 0;
-            left: 0;
             z-index: 9999;
         }
 
@@ -83,24 +85,19 @@
         }
 
         /* =========================================
-           PART 2: 聊天室 (Chat App) 樣式
+           PART 2: 聊天室 (Chat App)
            ========================================= */
         #app-view {
-            display: none; /* 預設隱藏 */
+            display: none;
             width: 100%;
-            height: 100%;
+            /* 修正 3: 確保 App 高度跟隨視窗，但允許內容撐開 */
+            height: 100dvh; 
+            position: relative;
+            z-index: 1;
         }
 
-        /* 以下維持原有的 CSS */
-        .bubble { 
-            max-width: 88%; 
-            padding: 1rem 1.2rem; 
-            border-radius: 1.2rem; 
-            position: relative; 
-            word-wrap: break-word; 
-            font-size: 0.95rem; 
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
+        /* 對話框樣式 (維持不變) */
+        .bubble { max-width: 88%; padding: 1rem 1.2rem; border-radius: 1.2rem; position: relative; word-wrap: break-word; font-size: 0.95rem; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .bubble-user { background-color: var(--brand-teal); color: white; border-bottom-right-radius: 0.25rem; margin-left: auto; line-height: 1.6; }
         .bubble-ai { background-color: #ffffff; color: var(--brand-text); border-bottom-left-radius: 0.25rem; margin-right: auto; border: 1px solid #F3F4F6; }
         .ai-content { font-size: 0.95rem; line-height: 1.85; color: #374151; overflow-wrap: break-word; }
@@ -134,19 +131,15 @@
             </div>
             <h1 class="text-xl font-bold text-[#2B201A] tracking-wide mb-1">搬家小岳</h1>
             <p class="text-[#5FA09D] text-sm font-medium mb-6">您的搬家諮詢師</p>
-            
-            <p class="text-gray-500 text-xs mb-5 leading-relaxed font-medium">
-                點擊下方按鈕<br>開啟完整語音與照片估價功能
-            </p>
-
+            <p class="text-gray-500 text-xs mb-5 leading-relaxed font-medium">點擊下方按鈕<br>開啟完整語音與照片估價功能</p>
             <button id="open-btn" class="pulse-btn w-full py-3.5 rounded-xl font-bold shadow-lg hover:bg-[#4A8B89] transform active:scale-95 transition flex items-center justify-center gap-2 text-sm sm:text-base">
                 <span>啟動語音互動 🎙️</span>
             </button>
         </div>
-        <div class="absolute bottom-4 text-[10px] text-[#2B201A]/30 font-medium">Powered by 搬家阿岳</div>
+        <div class="absolute bottom-4 text-[10px] text-[#2B201A]/30 font-medium">Powered by 搬家阿岳 2025</div>
     </div>
 
-    <main id="app-view" class="w-full max-w-[480px] h-[100dvh] sm:h-[95vh] bg-[#FFFDF5] sm:rounded-[2rem] sm:shadow-2xl overflow-hidden flex flex-col relative mx-auto border-0 sm:border border-gray-200">
+    <main id="app-view" class="w-full max-w-[480px] h-[100dvh] sm:h-[95vh] bg-[#FFFDF5] sm:rounded-[2rem] sm:shadow-2xl flex flex-col relative mx-auto border-0 sm:border border-gray-200">
         <div id="login-screen" class="absolute inset-0 z-50 bg-[#F4D35E] flex flex-col justify-center items-center p-8 transition-transform duration-500 transform translate-y-0">
             <div class="w-full max-w-xs bg-white/90 backdrop-blur p-6 rounded-3xl shadow-xl">
                 <div class="text-center mb-8">
@@ -156,7 +149,6 @@
                     <h1 class="text-2xl font-bold text-[#2B201A] tracking-wide">搬家小岳</h1>
                     <p class="text-[#5FA09D] mt-1 text-sm font-medium">您的搬家諮詢師</p>
                 </div>
-                
                 <form id="login-form" class="space-y-4">
                     <div>
                         <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">怎麼稱呼您</label>
@@ -166,9 +158,7 @@
                         <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Email</label>
                         <input type="email" id="user-email" class="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#F4D35E] focus:border-[#F4D35E] outline-none transition text-gray-800 placeholder-gray-400" placeholder="example@email.com" required>
                     </div>
-                    <button type="submit" class="w-full py-3.5 bg-[#5FA09D] text-white font-bold rounded-xl shadow-lg shadow-teal-100 hover:bg-[#4A8B89] transform active:scale-95 transition mt-2">
-                        開始諮詢
-                    </button>
+                    <button type="submit" class="w-full py-3.5 bg-[#5FA09D] text-white font-bold rounded-xl shadow-lg shadow-teal-100 hover:bg-[#4A8B89] transform active:scale-95 transition mt-2">開始諮詢</button>
                 </form>
             </div>
             <div class="absolute bottom-6 text-xs text-[#2B201A]/50 font-medium">Powered by 搬家阿岳 2025</div>
@@ -234,46 +224,39 @@
         // ============================================
         // ★★★ 請填入您的 GAS 部署網址 ★★★
         // ============================================
-        const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyH6f2SAQcOekVSXOh9rS6L9PRiOzxaw05YA_ySCsnVasOLwsu6jtvGUIGeHdQukNms/exec'; 
+        const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwSmd2upEnFqeW_9E3gMZ7SO_LrZtA6WJWBuq9W5S1fPdCF38rTNJ4CrlmUWpP6XoiY/exec'; 
 
         // ============================================
-        // 核心邏輯：網址參數強制顯示啟動頁
+        // 核心邏輯：初始化
         // ============================================
         function initView() {
             const launcherView = document.getElementById('launcher-view');
             const appView = document.getElementById('app-view');
             const openBtn = document.getElementById('open-btn');
             
-            // 1. 檢查網址參數是否有 ?embed=true
+            // 檢查是否強制顯示 (embed=true) 或是被 iframe 嵌入
             const urlParams = new URLSearchParams(window.location.search);
             const forceEmbed = urlParams.has('embed');
-            
-            // 2. 或是檢查是否被 iframe 包住 (作為備用判斷)
             let isFrame = false;
             try { isFrame = window.self !== window.top; } catch (e) { isFrame = true; }
 
-            // 3. 如果有 embed 參數，或者被 iframe 包住 -> 顯示啟動頁
             if (forceEmbed || isFrame) {
                 launcherView.style.display = 'flex';
                 appView.style.display = 'none';
             } else {
-                // 否則直接顯示 App
                 launcherView.style.display = 'none';
                 appView.style.display = 'flex';
             }
 
-            // 4. 按鈕點擊邏輯：打開「乾淨的網址」(去掉 ?embed=true)
             openBtn.onclick = function() {
-                // 取得當前網址，去掉問號後面的參數
                 const cleanUrl = window.location.href.split('?')[0];
                 window.open(cleanUrl, '_blank');
             };
         }
-
         window.addEventListener('load', initView);
 
         // ============================================
-        // 以下為聊天室原本的邏輯 (不變)
+        // 聊天室邏輯
         // ============================================
         const loginScreen = document.getElementById('login-screen');
         const loginForm = document.getElementById('login-form');
@@ -359,7 +342,6 @@
             });
             imageInput.value = '';
         });
-
         micBtn.addEventListener('click', async () => {
             if (pendingAudioBlob && !isRecording) { pendingAudioBlob = null; updatePreview(); }
             if (!isRecording) {
@@ -381,7 +363,7 @@
                     messageInput.placeholder = "錄音中... (再次點擊麥克風停止)";
                 } catch (err) {
                     console.error("Mic Error:", err);
-                    alert("無法存取麥克風。請確認您已允許瀏覽器使用麥克風權限。\n(若是透過 Google Sites 瀏覽，請務必點擊「啟動語音互動」開啟新視窗)");
+                    alert("無法存取麥克風。請確認權限或點擊「啟動語音互動」開啟新視窗。");
                 }
             } else {
                 mediaRecorder.stop();
@@ -392,7 +374,6 @@
                 messageInput.focus();
             }
         });
-
         function updatePreview() {
             if (selectedImages.length === 0 && !pendingAudioBlob) { previewArea.classList.add('hidden'); } else { previewArea.classList.remove('hidden'); }
             const existingAudio = document.getElementById('audio-preview-item');
@@ -406,7 +387,6 @@
                 previewArea.appendChild(audioWrapper);
             }
         }
-
         chatForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const text = messageInput.value.trim();
@@ -439,7 +419,6 @@
                 };
             } else { handleBackendCall(text, imagesToSend, null); }
         });
-
         function handleBackendCall(text, images, audioData) {
             const loadingId = appendLoading();
             scrollToBottom();
